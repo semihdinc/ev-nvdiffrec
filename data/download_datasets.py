@@ -70,6 +70,6 @@ def download_nerd():
         archive.close()
 
 download_nerf_synthetic()
-download_nerd()
+# download_nerd()
 print("Completed")
 

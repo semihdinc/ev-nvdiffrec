@@ -23,7 +23,7 @@ from .dataset import Dataset
 ###############################################################################
 
 def _load_img(path):
-    files = glob.glob(path + '.*')
+    files = glob.glob(path[:-4] + '.*')
     assert len(files) > 0, "Tried to find image file for: %s, but found 0 files" % (path)
     img = util.load_image_raw(files[0])
     if img.dtype != np.float32: # LDR image
@@ -44,7 +44,7 @@ class DatasetNERF(Dataset):
         self.n_images = len(self.cfg['frames'])
 
         # Determine resolution & aspect ratio
-        self.resolution = _load_img(os.path.join(self.base_dir, self.cfg['frames'][0]['file_path'])).shape[0:2]
+        self.resolution = _load_img(os.path.join(self.base_dir, self.cfg['frames'][0]['file_path'][2:])).shape[0:2]
         self.aspect = self.resolution[1] / self.resolution[0]
 
         if self.FLAGS.local_rank == 0:
@@ -58,7 +58,7 @@ class DatasetNERF(Dataset):
 
     def _parse_frame(self, cfg, idx):
         # Config projection matrix (static, so could be precomputed)
-        fovy   = util.fovx_to_fovy(cfg['camera_angle_x'], self.aspect)
+        fovy   = util.fovx_to_fovy(cfg['frames'][idx]['camera_angle_x'], self.aspect)
         proj   = util.perspective(fovy, self.aspect, self.FLAGS.cam_near_far[0], self.FLAGS.cam_near_far[1])
 
         # Load image data and modelview matrix
@@ -77,7 +77,7 @@ class DatasetNERF(Dataset):
         iter_res = self.FLAGS.train_res
         
         img      = []
-        fovy     = util.fovx_to_fovy(self.cfg['camera_angle_x'], self.aspect)
+        fovy     = util.fovx_to_fovy(self.cfg['frames'][itr % self.n_images]['camera_angle_x'], self.aspect)
 
         if self.FLAGS.pre_load:
             img, mv, mvp, campos = self.preloaded_data[itr % self.n_images]
