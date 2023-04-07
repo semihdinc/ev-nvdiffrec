@@ -63,8 +63,15 @@ class DatasetNERF(Dataset):
 
         # Load image data and modelview matrix
         img    = _load_img(os.path.join(self.base_dir, cfg['frames'][idx]['file_path']))
-        mv     = torch.linalg.inv(torch.tensor(cfg['frames'][idx]['transform_matrix'], dtype=torch.float32))
+        
+        c2w    = torch.tensor(cfg['frames'][idx]['transform_matrix'], dtype=torch.float32)
+
+        scene_scale_factor = cfg["aabb"][1][0] #we use xmax in aabb to downscale scene to unit cube [-1,1] 
+        c2w[:3,3] = c2w[:3,3] / scene_scale_factor
+        
+        mv     = torch.linalg.inv(c2w)
         mv     = mv @ util.rotate_x(-np.pi / 2)
+        
         campos = torch.linalg.inv(mv)[:3, 3]
         mvp    = proj @ mv
 
